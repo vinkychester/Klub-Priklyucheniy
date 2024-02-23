@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+
+  api:
+    build:
+      context: ./api
+      dockerfile: ../docker/php/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-api
+    volumes:
+      - ./api:${ROOT_DIRECTORY}
+    restart: unless-stopped
+    networks:
+      - ${COMPOSE_PROJECT_NAME}
+
+  nginx:
+    build:
+      context: ./docker/nginx
+    container_name: ${COMPOSE_PROJECT_NAME}-nginx
+    restart: unless-stopped
+    volumes:
+      - ./api/public:${ROOT_DIRECTORY}/public
+      # vhost
+      - ./docker/nginx/templates:/etc/nginx/templates
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NGINX_PORT: ${NGINX_PORT}
+      NGINX_ROOT: ${ROOT_DIRECTORY}
+    networks:
+      - ${COMPOSE_PROJECT_NAME}
+
+volumes:
+  nginx:
+
+networks:
+  klub-priklyucheniy:
+    driver: "bridge"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.0.0/16
